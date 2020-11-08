@@ -1,0 +1,55 @@
+#!/bin/bash
+
+set -euo pipefail
+
+readonly dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+pushd "${dir}/../tools/"
+trap 'popd' EXIT
+
+echo "Downloading tools ..."
+
+# shellcheck source=versions.bash
+source "${dir}/versions.bash"
+
+curl -sSL \
+  -O "https://storage.googleapis.com/kubernetes-release/release/${k8s_version}/bin/linux/amd64/kube-apiserver" \
+  -O "https://storage.googleapis.com/kubernetes-release/release/${k8s_version}/bin/linux/amd64/kube-controller-manager" \
+  -O "https://storage.googleapis.com/kubernetes-release/release/${k8s_version}/bin/linux/amd64/kube-scheduler" \
+  -O "https://storage.googleapis.com/kubernetes-release/release/${k8s_version}/bin/linux/amd64/kube-proxy" \
+  -O "https://storage.googleapis.com/kubernetes-release/release/${k8s_version}/bin/linux/amd64/kubelet" \
+  -O "https://storage.googleapis.com/kubernetes-release/release/${k8s_version}/bin/linux/amd64/kubectl"
+
+curl -sSL \
+  -O "https://github.com/coreos/etcd/releases/download/${etcd_version}/etcd-${etcd_version}-linux-amd64.tar.gz"
+
+tar -xf "etcd-${etcd_version}-linux-amd64.tar.gz"
+
+curl -sSL \
+  -O "https://github.com/containernetworking/plugins/releases/download/${cni_plugins_version}/cni-plugins-linux-amd64-${cni_plugins_version}.tgz" \
+  -O "https://github.com/opencontainers/runc/releases/download/${runc_version}/runc.amd64" \
+  -O "https://github.com/cri-o/cri-o/releases/download/${crio_version}/crio-${crio_version}.tar.gz" \
+  -O "https://github.com/containers/conmon/releases/download/${conmon_version}/conmon" \
+  -O https://raw.githubusercontent.com/seccomp/containers-golang/master/seccomp.json
+
+tar -xf "crio-${crio_version}.tar.gz"
+mv "crio-${crio_version}" crio
+mv crio/bin/crio-x86_64-static-glibc crio/bin/crio
+
+mv runc.amd64 runc
+
+curl -sSL \
+  -O "https://github.com/containous/traefik/releases/download/${traefik_version}/traefik_linux-amd64"
+
+mv traefik_linux-amd64 traefik
+
+chmod +x \
+  kube-apiserver \
+  kube-controller-manager \
+  kube-scheduler \
+  kube-proxy \
+  kubelet \
+  kubectl \
+  runc \
+  traefik \
+  conmon

@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -euo pipefail
+
+readonly dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly tmpdir=$(mktemp -d /tmp/kubernetes-the-hard-way-XXXXXX)
+mkdir -p "${tmpdir}"
+
+readonly binary_format=amd64
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+  readonly binary_platform=linux
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  readonly binary_platform=darwin
+fi
+
+pushd "${tmpdir}"
+trap 'popd; rm -rf "${tmpdir}"' EXIT
+
+# shellcheck source=versions.bash
+source "${dir}/versions.bash"
+
+curl -sSL \
+  -O "https://pkg.cfssl.org/${cfssl_version}/cfssl_${binary_platform}-${binary_format}" \
+  -O "https://pkg.cfssl.org/${cfssl_version}/cfssljson_${binary_platform}-${binary_format}"
+
+chmod +x cfssl_${binary_platform}-${binary_format} cfssljson_${binary_platform}-${binary_format}
+
+sudo mv -v cfssl_${binary_platform}-${binary_format} /usr/local/bin/cfssl
+sudo mv -v cfssljson_${binary_platform}-${binary_format} /usr/local/bin/cfssljson
+
+curl -ssL \
+  -O "https://storage.googleapis.com/kubernetes-release/release/${k8s_version}/bin/${binary_platform}/${binary_format}/kubectl"
+
+chmod +x kubectl
+
+sudo mv -v kubectl /usr/local/bin/
