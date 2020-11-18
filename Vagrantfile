@@ -1,70 +1,75 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# All Vagrant configuration is done below. The "2" in Vagrant.configure
-# configures the configuration version (we support older styles for
-# backwards compatibility). Please don't change it unless you know what
-# you're doing.
-Vagrant.configure("2") do |config|
-  # The most common configuration options are documented and commented below.
-  # For a complete reference, please see the online documentation at
-  # https://docs.vagrantup.com.
+Vagrant.configure(2) do |config|
+  config.vm.box = "ubuntu/bionic64"
+  config.vm.box_check_update = false
+  config.vm.provider "virtualbox" do |vb|
+#    vb.cpus = 1
+#    vb.memory = 768
+  end
 
-  # Every Vagrant development environment requires a box. You can search for
-  # boxes at https://vagrantcloud.com/search.
-  config.vm.box = "base"
+  # must be at the top
+  config.vm.define "lb-0" do |c|
+    c.vm.hostname = "lb-0"
+    c.vm.network "private_network", ip: "192.168.100.40"
 
-  # Disable automatic box update checking. If you disable this, then
-  # boxes will only be checked for updates when the user runs
-  # `vagrant box outdated`. This is not recommended.
-  # config.vm.box_check_update = false
+    c.vm.provision :shell, :path => "scripts/setup-haproxy.sh"
 
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
-  # NOTE: This will enable public access to the opened port
-  # config.vm.network "forwarded_port", guest: 80, host: 8080
+    c.vm.provider "virtualbox" do |vb|
+      vb.name = "lb-0"
+      vb.memory = "256"
+    end
+  end
 
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine and only allow access
-  # via 127.0.0.1 to disable public access
-  # config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
+  (0..1).each do |i|
+    config.vm.define "controller-#{i}" do |node|
+      node.vm.hostname = "controller-#{i}"
+      node.vm.network "private_network", ip: "192.168.100.1#{i}"
+      node.vm.provision :hosts, :sync_hosts => true
+      node.vm.provider "virtualbox" do |vb|
+        vb.name = "controller-#{i}"
+        vb.cpus = 1
+        vb.memory = 1024
+      end
+      # Copy certificates
+      node.vm.provision "file", source: "pki/ca/ca.pem", destination: "/home/vagrant/ca.pem"
+      node.vm.provision "file", source: "pki/ca/ca-key.pem", destination: "/home/vagrant/ca-key.pem"
+      node.vm.provision "file", source: "pki/api-server/kubernetes-key.pem", destination: "/home/vagrant/kubernetes-key.pem"
+      node.vm.provision "file", source: "pki/api-server/kubernetes.pem", destination: "/home/vagrant/kubernetes.pem"
+      # Copy kubeconfigs
+      node.vm.provision "file", source: "configs/admin.kubeconfig", destination: "/home/vagrant/admin.kubeconfig"
+      node.vm.provision "file", source: "configs/kube-controller-manager.kubeconfig", destination: "/home/vagrant/kube-controller-manager.kubeconfig"
+      node.vm.provision "file", source: "configs/kube-scheduler.kubeconfig", destination: "/home/vagrant/kube-scheduler.kubeconfig"
+      # Copy Encryption config
+      node.vm.provision "file", source: "configs/encryption-config.yaml", destination: "/home/vagrant/encryption-config.yaml"    
+      # Copy etcd setup script
+      node.vm.provision "file", source: "scripts/setup-etcd-controller-#{i}.sh", destination: "/home/vagrant/setup-etcd-controller-#{i}.sh"      
+      # Provisioning script
+      node.vm.provision "shell", path: "scripts/heartbeat.sh"
+    end
+  end
 
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  # config.vm.network "private_network", ip: "192.168.33.10"
-
-  # Create a public network, which generally matched to bridged network.
-  # Bridged networks make the machine appear as another physical device on
-  # your network.
-  # config.vm.network "public_network"
-
-  # Share an additional folder to the guest VM. The first argument is
-  # the path on the host to the actual folder. The second argument is
-  # the path on the guest to mount the folder. And the optional third
-  # argument is a set of non-required options.
-  # config.vm.synced_folder "../data", "/vagrant_data"
-
-  # Provider-specific configuration so you can fine-tune various
-  # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-  #
-  # config.vm.provider "virtualbox" do |vb|
-  #   # Display the VirtualBox GUI when booting the machine
-  #   vb.gui = true
-  #
-  #   # Customize the amount of memory on the VM:
-  #   vb.memory = "1024"
-  # end
-  #
-  # View the documentation for the provider you are using for more
-  # information on available options.
-
-  # Enable provisioning with a shell script. Additional provisioners such as
-  # Ansible, Chef, Docker, Puppet and Salt are also available. Please see the
-  # documentation for more information about their specific syntax and use.
-  # config.vm.provision "shell", inline: <<-SHELL
-  #   apt-get update
-  #   apt-get install -y apache2
-  # SHELL
+  (0..1).each do |i|
+    config.vm.define "worker-#{i}" do |node|
+      node.vm.hostname = "worker-#{i}"
+      node.vm.network "private_network", ip: "192.168.100.2#{i}"
+      node.vm.provision :hosts, :sync_hosts => true
+      node.vm.provider "virtualbox" do |vb|
+        vb.name = "worker-#{i}"
+        vb.cpus = 1
+        vb.memory = 512
+      end
+      # Copy certificates
+      node.vm.provision "file", source: "pki/ca/ca.pem", destination: "/home/vagrant/ca.pem"
+      node.vm.provision "file", source: "pki/kubelet/worker-#{i}-key.pem", destination: "/home/vagrant/kubelet-key.pem"
+      node.vm.provision "file", source: "pki/kubelet/worker-#{i}.pem", destination: "/home/vagrant/kubelet.pem"
+      # Copy kubeconfigs
+      node.vm.provision "file", source: "configs/worker-#{i}.kubeconfig", destination: "/home/vagrant/worker-#{i}.kubeconfig"
+      node.vm.provision "file", source: "configs/kube-proxy.kubeconfig", destination: "/home/vagrant/kube-proxy.kubeconfig"
+      # Provisioning script
+      node.vm.provision "shell", path: "scripts/worker-provision.sh"
+    end
+  end
 end
+
