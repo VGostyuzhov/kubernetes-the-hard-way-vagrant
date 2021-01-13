@@ -32,25 +32,6 @@ Vagrant.configure(2) do |config|
         vb.cpus = 1
         vb.memory = 1024
       end
-      # Copy certificates
-      node.vm.provision "file", source: "pki/ca/ca.pem", destination: "/home/vagrant/ca.pem"
-      node.vm.provision "file", source: "pki/ca/ca-key.pem", destination: "/home/vagrant/ca-key.pem"
-      node.vm.provision "file", source: "pki/api-server/kubernetes-key.pem", destination: "/home/vagrant/kubernetes-key.pem"
-      node.vm.provision "file", source: "pki/api-server/kubernetes.pem", destination: "/home/vagrant/kubernetes.pem"
-      node.vm.provision "file", source: "pki/service-account/service-account.pem", destination: "/home/vagrant/service-account.pem"
-      node.vm.provision "file", source: "pki/service-account/service-account-key.pem", destination: "/home/vagrant/service-account-key.pem"
-      # Copy kubeconfigs
-      node.vm.provision "file", source: "configs/admin.kubeconfig", destination: "/home/vagrant/admin.kubeconfig"
-      node.vm.provision "file", source: "configs/kube-controller-manager.kubeconfig", destination: "/home/vagrant/kube-controller-manager.kubeconfig"
-      node.vm.provision "file", source: "configs/kube-scheduler.kubeconfig", destination: "/home/vagrant/kube-scheduler.kubeconfig"
-      # Copy Encryption config
-      node.vm.provision "file", source: "configs/encryption-config.yaml", destination: "/home/vagrant/encryption-config.yaml"    
-      # Copy etcd setup script
-      node.vm.provision "file", source: "scripts/setup-etcd-controller-#{i}.sh", destination: "/home/vagrant/setup-etcd-controller-#{i}.sh"     
-      # Copy k8s controller setup script
-      node.vm.provision "file", source: "scripts/setup-k8s-controller-#{i}.sh", destination: "/home/vagrant/setup-k8s-controller-#{i}.sh"      
-      # Provisioning script
-      node.vm.provision "shell", path: "scripts/heartbeat.sh"
     end
   end
 
@@ -64,15 +45,6 @@ Vagrant.configure(2) do |config|
         vb.cpus = 1
         vb.memory = 512
       end
-      # Copy certificates
-      node.vm.provision "file", source: "pki/ca/ca.pem", destination: "/home/vagrant/ca.pem"
-      node.vm.provision "file", source: "pki/kubelet/worker-#{i}-key.pem", destination: "/home/vagrant/kubelet-key.pem"
-      node.vm.provision "file", source: "pki/kubelet/worker-#{i}.pem", destination: "/home/vagrant/kubelet.pem"
-      # Copy kubeconfigs
-      node.vm.provision "file", source: "configs/worker-#{i}.kubeconfig", destination: "/home/vagrant/worker-#{i}.kubeconfig"
-      node.vm.provision "file", source: "configs/kube-proxy.kubeconfig", destination: "/home/vagrant/kube-proxy.kubeconfig"
-      # Provisioning script
-      node.vm.provision "shell", path: "scripts/worker-provision.sh"
     end
   end
 end
