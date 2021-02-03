@@ -3,3 +3,7 @@ vagrant:
 
 cfssl:
 	go get -u github.com/cloudflare/cfssl/cmd/cfssl
+
+gen-certs:
+
+gen-configs:

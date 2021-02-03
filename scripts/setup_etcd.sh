@@ -21,8 +21,7 @@ sudo cp \
 sudo cp /vagrant/configs/"$(hostname -s)"-etcd.service /etc/systemd/system/etcd.service
 
 # Start the etcd Server
-{
-  sudo systemctl daemon-reload
-  sudo systemctl enable etcd
-  sudo systemctl start etcd
-}
+sudo systemctl daemon-reload
+sudo systemctl enable etcd
+sudo systemctl start etcd
+

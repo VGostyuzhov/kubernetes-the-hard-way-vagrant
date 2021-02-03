@@ -1,3 +1,9 @@
+#!/bin/bash
+
+dir="$(dirname "${BASH_SOURCE[0]}")/.."
+
+pushd "${dir}/pki/admin" || exit
+trap 'popd' EXIT
 cfssl gencert \
   -ca=../ca/ca.pem \
   -ca-key=../ca/ca-key.pem \

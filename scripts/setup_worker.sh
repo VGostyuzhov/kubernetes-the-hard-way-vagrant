@@ -1,8 +1,6 @@
 #!/bin/bash
 OS="xUbuntu_20.04"
 K8S_VERSION="v1.18.6"
-CRI_VERSION="v1.18.0"
-RUNC_VERSION="v1.0.0-rc91"
 CRIO_VERSION="1.18"
 CNI_VERSION="v0.8.6"
 
