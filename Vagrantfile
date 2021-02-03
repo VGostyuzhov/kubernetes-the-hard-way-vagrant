@@ -2,7 +2,7 @@
 # vi: set ft=ruby :
 
 Vagrant.configure(2) do |config|
-  config.vm.box = "ubuntu/bionic64"
+  config.vm.box = "ubuntu/focal64"
   config.vm.box_check_update = false
   config.vm.provider "virtualbox" do |vb|
 #    vb.cpus = 1
@@ -14,6 +14,7 @@ Vagrant.configure(2) do |config|
     c.vm.hostname = "lb-0"
     c.vm.network "private_network", ip: "192.168.100.40"
 
+    c.vm.provision :shell, :path => "scripts/setup-routes.sh"
     c.vm.provision :shell, :path => "scripts/setup-haproxy.sh"
 
     c.vm.provider "virtualbox" do |vb|
@@ -26,6 +27,9 @@ Vagrant.configure(2) do |config|
     config.vm.define "controller-#{i}" do |node|
       node.vm.hostname = "controller-#{i}"
       node.vm.network "private_network", ip: "192.168.100.1#{i}"
+
+      node.vm.provision :shell, :path => "scripts/setup-routes.sh"
+
       node.vm.provision :hosts, :sync_hosts => true
       node.vm.provider "virtualbox" do |vb|
         vb.name = "controller-#{i}"
@@ -39,6 +43,9 @@ Vagrant.configure(2) do |config|
     config.vm.define "worker-#{i}" do |node|
       node.vm.hostname = "worker-#{i}"
       node.vm.network "private_network", ip: "192.168.100.2#{i}"
+
+      node.vm.provision :shell, :path => "scripts/setup-routes.sh"
+
       node.vm.provision :hosts, :sync_hosts => true
       node.vm.provider "virtualbox" do |vb|
         vb.name = "worker-#{i}"

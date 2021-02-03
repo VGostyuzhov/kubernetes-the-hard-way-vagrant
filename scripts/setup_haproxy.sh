@@ -2,11 +2,10 @@
 
 set -euo pipefail
 
-apt-get update
-apt-get install -y haproxy
+sudo apt-get update
+sudo apt-get install -y haproxy
 
-cat >/etc/haproxy/haproxy.cfg <<EOF
-
+sudo tee  /etc/haproxy/haproxy.cfg > /dev/null <<EOF
 global
 	log /dev/log	local0
 	log /dev/log	local1 notice
@@ -54,4 +53,4 @@ backend k8s_backend
 	server controller-1 192.168.100.11:6443 check inter 1000
 EOF
 
-systemctl restart haproxy
+sudo systemctl restart haproxy
